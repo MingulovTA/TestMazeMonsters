@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace TestMazeMonsters.Core.User
 {
-    ///[JsonConverter(typeof(StringEnumConverter))]
     public class UserData
     {
         //Todo Вместо KeyCode должен быть List<KeyCode>, чтобы назначать несколько клавишь на одно дейсвие

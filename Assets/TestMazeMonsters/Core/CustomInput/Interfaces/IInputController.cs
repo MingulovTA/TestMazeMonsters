@@ -1,4 +1,4 @@
-namespace TestMazeMonsters.Core.Input.Interfaces
+namespace TestMazeMonsters.Core.CustomInput.Interfaces
 {
     public interface IInputController
     {

@@ -1,4 +1,4 @@
-namespace TestMazeMonsters.Core.Input.Enums
+namespace TestMazeMonsters.Core.CustomInput.Enums
 {
     public enum InputCmdId
     {

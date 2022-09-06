@@ -46,7 +46,7 @@ namespace TestMazeMonsters.Core.User
             Load();
         }
 
-        private void Save()
+        public void Save()
         {
             File.WriteAllText(PersistentPath,JsonConvert.SerializeObject(_userData));
         }
@@ -60,7 +60,6 @@ namespace TestMazeMonsters.Core.User
             if (File.Exists(PersistentPath))
             {
                 _userData = JsonConvert.DeserializeObject<UserData>(File.ReadAllText(PersistentPath));
-                Debug.Log("Load"+JsonConvert.SerializeObject(_userData));
             }
             else
             {
@@ -74,7 +73,6 @@ namespace TestMazeMonsters.Core.User
                 Path.Combine(DEFAULT_CONFIG_DIR_NAME, Path.GetFileNameWithoutExtension(CONFIG_FILE_NAME));
             _userData = JsonConvert.DeserializeObject<UserData>(Resources.Load<TextAsset>(defaultPath).text);
             Save();
-            Debug.Log("LoadDefault"+JsonConvert.SerializeObject(_userData));
         }
     }
 }

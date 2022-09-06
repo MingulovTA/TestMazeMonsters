@@ -1,6 +1,15 @@
 {
   "Controls": {
+    "MoveForward": "w",
     "MoveBackward": "s",
-    "MoveForward": "w"
+    "MoveLeft": "a",
+    "MoveRight": "d",
+    "TurnUp": "upArrow",
+    "TurnDown": "downArrow",
+    "TurnLeft": "leftArrow",
+    "TurnRight": "rightArrow",
+    "Escape": "escape",
+    "Return": "return",
+    "Attack": "space"
   }
 }
