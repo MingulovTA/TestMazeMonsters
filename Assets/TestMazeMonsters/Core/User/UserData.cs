@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using TestMazeMonsters.Core.Input.Enums;
+using TestMazeMonsters.Core.CustomInput.Enums;
 using UnityEngine;
 
 namespace TestMazeMonsters.Core.User

@@ -1,4 +1,4 @@
-using TestMazeMonsters.Core.Input;
+using TestMazeMonsters.Core.CustomInput;
 using TestMazeMonsters.Core.User;
 using Zenject;
 
