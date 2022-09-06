@@ -1,0 +1,6 @@
+{
+  "Controls": {
+    "MoveBackward": "s",
+    "MoveForward": "w"
+  }
+}
