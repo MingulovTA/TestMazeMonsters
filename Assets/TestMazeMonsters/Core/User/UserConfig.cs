@@ -36,18 +36,17 @@ namespace TestMazeMonsters.Core.User
 
         public void Initialize()
         {
+            Load();
+        }
+
+        public void Save()
+        {
             JsonConvert.DefaultSettings = () =>
             {
                 var settings = new JsonSerializerSettings();
                 settings.Converters.Add(new StringEnumConverter { CamelCaseText = true });
                 return settings;
             };
-            
-            Load();
-        }
-
-        public void Save()
-        {
             File.WriteAllText(PersistentPath,JsonConvert.SerializeObject(_userData));
         }
 

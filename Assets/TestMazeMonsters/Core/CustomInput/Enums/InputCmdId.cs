@@ -24,6 +24,8 @@ namespace TestMazeMonsters.Core.CustomInput.Enums
         CameraZoomOut = 16,
     
         Return = 20,
-        Escape = 21
+        Escape = 21,
+        TabNext = 22,
+        TabPrevious = 23
     }
 }

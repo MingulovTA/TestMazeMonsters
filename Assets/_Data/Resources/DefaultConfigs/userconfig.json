@@ -10,6 +10,14 @@
     "TurnRight": "rightArrow",
     "Escape": "escape",
     "Return": "return",
-    "Attack": "space"
+    "Attack": "space",
+    "TabNext": "Tab"
+  },
+
+  "InputDevices": {
+    "KeyBoard": true,
+    "Mouse": true,
+    "TouchScreen": true,
+    "Gamepad": false
   }
 }

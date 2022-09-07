@@ -97,6 +97,7 @@ namespace TestMazeMonsters.Core.CustomInput
 
         public void RegisterHandler(IInputHandler inputHandler)
         {
+            Debug.Log($"RegisterHandler {inputHandler.CursorRequired}");
             if (inputHandler != null)
             {
                 _inputHandlers.Add(inputHandler);
