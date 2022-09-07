@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TestMazeMonsters.Core.CustomInput.Devices;
 using TestMazeMonsters.Core.CustomInput.Enums;
 using TestMazeMonsters.Core.CustomInput.Interfaces;
 using TestMazeMonsters.Core.User;
@@ -11,96 +12,82 @@ namespace TestMazeMonsters.Core.CustomInput
 {
     public class InputController : IInputController, IInputInjector, ITickable, IInitializable
     {
+        private const float  FLOAT_TOLERANCE = 0.001f;
+        
         [Inject] private readonly UserConfig _userConfig;
         
         private List<IInputHandler> _inputHandlers = new List<IInputHandler>();
-        private Dictionary<InputCmdId, InputActionType> _inputActions = new Dictionary<InputCmdId, InputActionType>();
+        private List<InputCmdId> _inputCmdIds = new List<InputCmdId>();
+        private Dictionary<InputCmdId, float> _lastCommonSignals = new Dictionary<InputCmdId, float>();
+        private Dictionary<InputCmdId, float> _commonSignals = new Dictionary<InputCmdId, float>();
         private Vector2 _lastMousePosition;
+        private List<IVirtualDevice> _virtualDevices = new List<IVirtualDevice>();
 
         public void Initialize()
         {
             foreach (var inputCmdId in Enum.GetValues(typeof(InputCmdId)).Cast<InputCmdId>().ToList())
             {
-                _inputActions.Add(inputCmdId,InputActionType.None);
+                _inputCmdIds.Add(inputCmdId);
+                _commonSignals.Add(inputCmdId,0);
+                _lastCommonSignals.Add(inputCmdId,0);
             }
-
-            _lastMousePosition = Input.mousePosition;
+            
+            _virtualDevices.Add(new VdMouse());
+            _virtualDevices.Add(new VdKeyboard(_userConfig.UserData.Controls));
+            _virtualDevices.Add(new VdTouchScreen());
+            
+            foreach (var userDataInputDevice in _userConfig.UserData.InputDevices)
+            {
+                IVirtualDevice vd = _virtualDevices.FirstOrDefault(v => v.VirtualDeviceId == userDataInputDevice.Key);
+                if (vd != null)
+                {
+                    if (userDataInputDevice.Value)
+                    {
+                        vd.Enable();
+                    }
+                    else
+                    {
+                        vd.Disable();
+                    }
+                }
+            }
         }
+
     
         public void Tick()
         {
-            //Todo Разбить этого монстра на классы-девайсы
-            foreach (var userDataControl in _userConfig.UserData.Controls)
+            foreach (var virtualDevice in _virtualDevices)
             {
-                if (Input.GetKey(userDataControl.Value)&&
-                    _inputActions[userDataControl.Key] == InputActionType.Pressed)
+                if (virtualDevice.IsAcitve)
+                    virtualDevice.Tick();
+            }
+
+            foreach (var cmdId in _inputCmdIds)
+            {
+                _commonSignals[cmdId] = 0;
+                foreach (var virtualDevice in _virtualDevices)
                 {
-                    TryToPushActionCmd(userDataControl.Key,InputActionType.Loop,1);
+                    if (virtualDevice.IsAcitve)
+                        _commonSignals[cmdId] += virtualDevice.InputActions[cmdId];
+                }
+
+                if (Math.Abs(_lastCommonSignals[cmdId]) < FLOAT_TOLERANCE && Math.Abs(_commonSignals[cmdId]) > FLOAT_TOLERANCE)
+                {
+                    TryToPushActionCmd(cmdId,InputActionType.Pressed,_commonSignals[cmdId]);
                 }
                 
-                if (Input.GetKeyDown(userDataControl.Value))
+                if (Math.Abs(_lastCommonSignals[cmdId]) > FLOAT_TOLERANCE && Math.Abs(_commonSignals[cmdId]) > FLOAT_TOLERANCE)
                 {
-                    if (_inputActions[userDataControl.Key] == InputActionType.None)
-                    {
-                        TryToPushActionCmd(userDataControl.Key,InputActionType.Pressed,1);
-                        _inputActions[userDataControl.Key] = InputActionType.Pressed;
-                    }
+                    TryToPushActionCmd(cmdId,InputActionType.Loop,_commonSignals[cmdId]);
                 }
                 
-                if (Input.GetKeyUp(userDataControl.Value))
+                if (Math.Abs(_lastCommonSignals[cmdId]) > FLOAT_TOLERANCE && Math.Abs(_commonSignals[cmdId]) < FLOAT_TOLERANCE)
                 {
-                    if (_inputActions[userDataControl.Key] == InputActionType.Pressed)
-                    {
-                        TryToPushActionCmd(userDataControl.Key,InputActionType.Released,0);
-                        _inputActions[userDataControl.Key] = InputActionType.None;
-                    }
+                    TryToPushActionCmd(cmdId,InputActionType.Released,_commonSignals[cmdId]);
                 }
-            }
 
-            if (Input.mousePosition.x > _lastMousePosition.x)
-            {
-                TryToPushActionCmd(InputCmdId.TurnRight, InputActionType.Loop,
-                    Input.mousePosition.x - _lastMousePosition.x);
-            }
-            else
-            {
-                if (Input.mousePosition.x < _lastMousePosition.x)
-                {
-                    TryToPushActionCmd(InputCmdId.TurnLeft, InputActionType.Loop,
-                        Input.mousePosition.x - _lastMousePosition.x);
-                }
-            }
-            
-            if (Input.mousePosition.y > _lastMousePosition.y)
-            {
-                TryToPushActionCmd(InputCmdId.TurnUp, InputActionType.Loop,
-                    Input.mousePosition.y - _lastMousePosition.y);
-            }
-            else
-            {
-                if (Input.mousePosition.y < _lastMousePosition.y)
-                {
-                    TryToPushActionCmd(InputCmdId.TurnDown, InputActionType.Loop,
-                        Input.mousePosition.y - _lastMousePosition.y);
-                }
-            }
-            
-            if (Input.GetMouseButtonDown(0))
-            {
-                TryToPushActionCmd(InputCmdId.Attack, InputActionType.Pressed, 1);
-            }
-
-            if (Input.GetMouseButton(0))
-            {
-                TryToPushActionCmd(InputCmdId.Attack, InputActionType.Loop, 1);
-            }
-            
-            if (Input.GetMouseButtonUp(0))
-            {
-                TryToPushActionCmd(InputCmdId.Attack, InputActionType.Released, 0);
-            }
-
-            _lastMousePosition = Input.mousePosition;
+                _lastCommonSignals[cmdId] = _commonSignals[cmdId];
+            }   
         }
 
         public void Inject(InputCmdId inputCmdId, InputActionType inputActionType, float value)
@@ -108,7 +95,33 @@ namespace TestMazeMonsters.Core.CustomInput
             
         }
 
-        public void TryToPushActionCmd(InputCmdId inputCmdId, InputActionType inputActionType, float value)
+        public void RegisterHandler(IInputHandler inputHandler)
+        {
+            if (inputHandler != null)
+            {
+                _inputHandlers.Add(inputHandler);
+                SetActiveHandler();
+            }
+        }
+
+        public void UnregisterHandler(IInputHandler inputHandler)
+        {
+            if (_inputHandlers.Contains(inputHandler))
+            {
+                _inputHandlers.Remove(inputHandler);
+            }
+
+            int i = _inputHandlers.Count - 1;
+            while (i>=0)
+            {
+                if (_inputHandlers[i] == null)
+                    _inputHandlers.RemoveAt(i);
+                i--;
+            }
+            SetActiveHandler();
+        }
+        
+        private void TryToPushActionCmd(InputCmdId inputCmdId, InputActionType inputActionType, float value)
         {
             if (_inputHandlers.Count == 0 || _inputHandlers[_inputHandlers.Count - 1] == null)
             {
@@ -117,23 +130,19 @@ namespace TestMazeMonsters.Core.CustomInput
             _inputHandlers[_inputHandlers.Count - 1].HandleCmd(inputCmdId,inputActionType,value);
         }
 
-        public void RegisterHandler(IInputHandler inputHandler)
+        private void SetActiveHandler()
         {
-            if (inputHandler!=null)
-                _inputHandlers.Add(inputHandler);
-        }
-
-        public void UnregisterHandler(IInputHandler inputHandler)
-        {
-            if (_inputHandlers.Contains(inputHandler))
-                _inputHandlers.Remove(inputHandler);
-
-            int i = _inputHandlers.Count - 1;
-            while (i>=0)
+            if (_inputHandlers.Count==0||
+                _inputHandlers[_inputHandlers.Count-1]==null||
+                _inputHandlers[_inputHandlers.Count-1].CursorRequired)
             {
-                if (_inputHandlers[i] == null)
-                    _inputHandlers.RemoveAt(i);
-                i--;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
         }
     }

@@ -20,6 +20,8 @@ namespace TestMazeMonsters.Core.CustomInput.Enums
         Use = 12,
         Attack = 13,
         Attack2 = 14,
+        CameraZoomIn = 15,
+        CameraZoomOut = 16,
     
         Return = 20,
         Escape = 21

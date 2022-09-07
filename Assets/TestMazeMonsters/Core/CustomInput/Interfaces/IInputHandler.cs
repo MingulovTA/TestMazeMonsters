@@ -5,5 +5,6 @@ namespace TestMazeMonsters.Core.CustomInput.Interfaces
     public interface IInputHandler
     {
         void HandleCmd(InputCmdId inputCmdId, InputActionType inputActionType, float value);
+        bool CursorRequired { get; }
     }
 }
