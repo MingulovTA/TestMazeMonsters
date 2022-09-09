@@ -2,12 +2,14 @@ using System;
 using TestMazeMonsters.Core.CustomInput.Enums;
 using TestMazeMonsters.Core.CustomInput.Interfaces;
 using TestMazeMonsters.Gameplay.Cameras;
+using TestMazeMonsters.Gameplay.Characters;
+using TestMazeMonsters.Gameplay.Characters.Core;
 using UnityEngine;
 using Zenject;
 
 namespace TestMazeMonsters.Gameplay.Player
 {
-    public class PlayerController : MonoBehaviour, IInputHandler
+    public class PlayerController : MonoBehaviour, IInputHandler, ICharacter
     {
         [Inject] private readonly IInputController _inputController;
         
@@ -16,12 +18,16 @@ namespace TestMazeMonsters.Gameplay.Player
         
         private readonly PlayerMovement _playerMovement = new PlayerMovement();
 
-        
+        private int _health = 100;
         private Vector3Int _currentAreaCoords;
         private Vector3Int _areaCoords;
         private Transform _transform;
         
         public event Action<int, int> OnAreaChanged;
+        public Vector3Int AreaPosision => _areaCoords;
+        public Vector3 Posision => _transform.position;
+        public TeamId TeamId => TeamId.Humans;
+        public int Health => _health;
 
         public void HandleCmd(InputCmdId inputCmdId, InputActionType inputActionType, float value)
         {
@@ -59,5 +65,13 @@ namespace TestMazeMonsters.Gameplay.Player
                 OnAreaChanged?.Invoke(_currentAreaCoords.x,_currentAreaCoords.z);
             }
         }
+
+        public void TakeDamage(int value)
+        {
+            _health -= value;
+            _health = Mathf.Clamp(_health, 0, 100);
+        }
+
+        public AiSensor AiSensor { get; }
     }
 }
